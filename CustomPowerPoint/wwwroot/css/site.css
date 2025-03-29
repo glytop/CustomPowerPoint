@@ -1,0 +1,142 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+}
+
+.text-element {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    min-width: 100px;
+    min-height: 30px;
+}
+
+.editor {
+    width: 100%;
+    min-height: 50px;
+}
+
+#presentation-container {
+    display: flex;
+    height: 100vh;
+}
+
+#slides-panel {
+    width: 20%;
+    background: #f8f9fa;
+    padding: 10px;
+}
+
+#slide-view {
+    flex-grow: 1;
+    background: white;
+    position: relative;
+}
+
+.text-element {
+    position: absolute;
+    cursor: move;
+    padding: 5px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid #ccc;
+}
+
+#slide-editor {
+    position: relative;
+    background: white;
+}
+
+.text-block {
+    cursor: move;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    cursor: se-resize;
+    background: #ccc;
+}
+
+.modal.slide-down .modal-dialog {
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-out;
+}
+
+.modal.slide-down.show .modal-dialog {
+    transform: translateY(0);
+}
+.clickable-row {
+    cursor: pointer;
+}
+
+#slide-editor {
+    position: relative;
+    background: white;
+}
+
+.text-block {
+    cursor: move;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background: #fff;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    cursor: se-resize;
+    background: #ccc;
+}
+
+.slide-thumbnail {
+    width: 200px; /* Ширина миниатюры */
+    height: 112px; /* Высота по соотношению 16:9 */
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #f8f9fa; /* Цвет фона */
+}
+
+.ratio-16x9 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 112px;
+}

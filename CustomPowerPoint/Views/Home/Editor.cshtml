@@ -1,0 +1,137 @@
+﻿@model PresentationEditorViewModel
+
+@if (Model.Slides.Any())
+{
+    <style>
+        #empty-slide-placeholder {
+            display: none;
+        }
+    </style>
+}
+
+<header class="bg-white border-bottom p-2 d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+        <a href="/Home/Presentations?nickname=@ViewBag.UserNickname" class="btn btn-sm btn-light me-3">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+        <div>
+            <h5 class="fw-bold mb-0" id="presentation-title">@Model.Title</h5>
+            <small class="text-muted" id="last-modified">Last modified: @DateTime.Now.ToString("g")</small>
+        </div>
+    </div>
+    <div>
+        <a href="/Home/PresentationMode?presentationId=@Model.Id" class="btn btn-sm btn-outline-primary" id="present-button">
+            <i class="bi bi-eye me-1"></i> Present
+        </a>
+    </div>
+</header>
+
+<div class="d-flex" style="height: calc(100vh - 56px);">
+    <div class="border-end bg-light" style="width: 250px;">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-layers me-2"></i>
+                <span>Slides (<span id="slides-count">@Model.Slides.Count</span>)</span>
+            </div>
+            <form method="post" asp-action="AddSlide" asp-controller="Home" class="mb-0">
+                <input type="hidden" name="presentationId" value="@Model.Id" />
+                <button type="submit" class="btn btn-sm btn-primary" id="add-slide-button">
+                    <i class="bi bi-plus-lg">A</i>
+                </button>
+            </form>
+        </div>
+        <div class="p-2 overflow-auto" style="max-height: calc(100vh - 200px);" id="slides-list">
+            @foreach (var slide in Model.Slides)
+            {
+                <div class="d-flex justify-content-between align-items-center">
+                    <form method="get" asp-action="Editor" asp-controller="Home">
+                        <input type="hidden" name="presentationId" value="@Model.Id" />
+                        <input type="hidden" name="slideId" value="@slide.Id" />
+                        <button type="submit" class="btn p-0 w-100">
+                            <div class="mb-2 slide-thumbnail border @(slide.Id == Model.ActiveSlide?.Id ? "border-primary" : "border-secondary")">
+                                <div class="ratio ratio-16x9 bg-white d-flex align-items-center justify-content-center">
+                                    <div class="text-muted small">Slide @slide.Order</div>
+                                </div>
+                            </div>
+                        </button>
+                    </form>
+                    <form method="post" asp-action="DeleteSlide" asp-controller="Home">
+                        <input type="hidden" name="slideId" value="@slide.Id" />
+                        <input type="hidden" name="presentationId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-danger btn-sm">X</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="flex-grow-1 bg-light p-3 d-flex align-items-center justify-content-center">
+        <div class="bg-white shadow position-relative"
+             style="aspect-ratio: 16/9; max-height: 80vh; width: 100%;"
+             id="slide-editor"
+             onclick="activateEditor(event)">
+            <div id="empty-slide-placeholder" class="position-absolute top-0 bottom-0 start-0 end-0 d-flex flex-column align-items-center justify-content-center text-muted">
+                <i class="bi bi-plus-lg fs-1 mb-2"></i>
+                <p>Click anywhere to add text</p>
+            </div>
+            <textarea id="slide-text" class="position-absolute border-0 p-2"
+                      style="display: none; width: 90%; height: 80%; font-size: 24px;"></textarea>
+        </div>
+    </div>
+
+    <div class="border-start bg-light" style="width: 250px;">
+        <div class="p-3 border-bottom">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-people me-2"></i>
+                <span>Users (<span id="users-count">@Model.Users.Count</span>)</span>
+            </div>
+        </div>
+        <div class="overflow-auto" style="max-height: calc(100vh - 200px);" id="users-list">
+            @foreach (var user in Model.Users)
+            {
+                <div class="p-3 border-bottom d-flex align-items-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        @user.Nickname.Substring(0, 1).ToUpper()
+                    </div>
+                    <div class="fw-medium">@user.Nickname</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/presentationHub")
+            .build();
+
+    connection.start().then(() => {
+        console.log("SignalR connected");
+        connection.invoke("JoinPresentation", "@Model.Id");
+    }).catch(err => console.error(err.toString()));
+
+    function activateEditor(event) {
+        let placeholder = document.getElementById("empty-slide-placeholder");
+        let textarea = document.getElementById("slide-text");
+        placeholder.style.display = "none";
+        textarea.style.display = "block";
+        textarea.focus();
+    }
+
+    function changeSlide(slideId) {
+        window.location.href = `/Home/Editor?presentationId=@Model.Id&slideId=${slideId}`;
+    }
+
+    $(document).on('dblclick', '.text-block', function() {
+        const block = $(this);
+        const currentContent = block.find('.content').text();
+        const textarea = $(`<textarea class="form-control w-100 h-100">${currentContent}</textarea>`);
+        block.find('.content').html(textarea);
+        textarea.focus();
+        textarea.on('blur', function() {
+            const newContent = $(this).val();
+            connection.invoke("UpdateSlide", "@Model.Id", "currentSlide", block.attr('id'), newContent);
+            block.find('.content').text(newContent);
+        });
+    });
+</script>

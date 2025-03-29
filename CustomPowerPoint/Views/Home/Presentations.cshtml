@@ -1,0 +1,78 @@
+﻿@model IEnumerable<PresentationViewModel>
+
+@{
+    var userNickname = ViewBag.UserNickname as string;
+}
+
+<div class="container my-4">
+    <h2 class="mb-3">All Presentations</h2>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPresentationModal">
+            <i class="bi bi-plus-lg me-2"></i> Создать презентацию
+        </button>
+    </div>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Uploaded</th>
+            </tr>
+        </thead>
+        <tbody data-nickname="@userNickname">
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr class="clickable-row" data-id="@item.Id">
+                        <td>@item.Title</td>
+                        <td>@item.CreatorNickname</td>
+                        <td>@item.UploadedDate</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr id="no-presentations">
+                    <td colspan="3" class="text-center">No presentations found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="createPresentationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать презентацию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-action="CreatePresentation" asp-controller="Home">
+                    <div class="mb-3">
+                        <label for="presentation-title-input" class="form-label">Заголовок презентации</label>
+                        <input type="text" class="form-control" id="presentation-title-input" name="title" placeholder="Моя презентация" required>
+                    </div>
+                    <input type="hidden" name="nickname" value="@userNickname" />
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.clickable-row').on('click', function() {
+            var presId = $(this).data('id');
+            var nickname = $('tbody').data('nickname');
+            window.location.href = '/Home/Editor?presentationId=' + presId + '&nickname=' + encodeURIComponent(nickname);
+        });
+    });
+</script>
