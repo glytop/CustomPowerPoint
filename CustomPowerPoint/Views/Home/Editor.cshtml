@@ -47,6 +47,7 @@
                     <form method="get" asp-action="Editor" asp-controller="Home">
                         <input type="hidden" name="presentationId" value="@Model.Id" />
                         <input type="hidden" name="slideId" value="@slide.Id" />
+                        <input type="hidden" name="nickname" value="@ViewBag.UserNickname" />
                         <button type="submit" class="btn p-0 w-100">
                             <div class="mb-2 slide-thumbnail border @(slide.Id == Model.ActiveSlide?.Id ? "border-primary" : "border-secondary")">
                                 <div class="ratio ratio-16x9 bg-white d-flex align-items-center justify-content-center">
@@ -101,37 +102,29 @@
 </div>
 
 <script>
+    const params = new URLSearchParams(window.location.search);
+    const nickname = params.get("nickname") || "Guest_" + Math.floor(Math.random() * 10000);
+
     const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/presentationHub")
-            .build();
+        .withUrl(`/presentationHub?nickname=${encodeURIComponent(nickname)}`)
+        .build();
 
-    connection.start().then(() => {
-        console.log("SignalR connected");
-        connection.invoke("JoinPresentation", "@Model.Id");
-    }).catch(err => console.error(err.toString()));
+    connection.start().catch(err => console.error(err));
 
-    function activateEditor(event) {
-        let placeholder = document.getElementById("empty-slide-placeholder");
-        let textarea = document.getElementById("slide-text");
-        placeholder.style.display = "none";
-        textarea.style.display = "block";
-        textarea.focus();
-    }
-
-    function changeSlide(slideId) {
-        window.location.href = `/Home/Editor?presentationId=@Model.Id&slideId=${slideId}`;
-    }
-
-    $(document).on('dblclick', '.text-block', function() {
-        const block = $(this);
-        const currentContent = block.find('.content').text();
-        const textarea = $(`<textarea class="form-control w-100 h-100">${currentContent}</textarea>`);
-        block.find('.content').html(textarea);
-        textarea.focus();
-        textarea.on('blur', function() {
-            const newContent = $(this).val();
-            connection.invoke("UpdateSlide", "@Model.Id", "currentSlide", block.attr('id'), newContent);
-            block.find('.content').text(newContent);
+    connection.on("UpdateUserList", function (users) {
+        let usersList = $("#users-list");
+        usersList.empty();
+        users.forEach(user => {
+            usersList.append(`
+                <div class="p-3 border-bottom d-flex align-items-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        ${user.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="fw-medium">${user}</div>
+                </div>
+            `);
         });
+
+        $("#users-count").text(users.length);
     });
 </script>

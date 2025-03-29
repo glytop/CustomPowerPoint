@@ -4,19 +4,33 @@ namespace CustomPowerPoint.Hubs
 {
     public class PresentationHub : Hub
     {
-        public async Task UpdateSlide(string presentationId, string slideId, string elementId, string newContent)
+        private static readonly HashSet<string> ConnectedUsers = new();
+
+        public override async Task OnConnectedAsync()
         {
-            await Clients.OthersInGroup(presentationId).SendAsync("ReceiveSlideUpdate", slideId, elementId, newContent);
+            var user = Context.GetHttpContext()?.Request.Query["nickname"];
+            if (!string.IsNullOrEmpty(user))
+            {
+                ConnectedUsers.Add(user);
+            }
+            await SendUserList();
+            await base.OnConnectedAsync();
         }
 
-        public async Task JoinPresentation(string presentationId)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, presentationId);
+            var user = Context.GetHttpContext()?.Request.Query["nickname"];
+            if (!string.IsNullOrEmpty(user))
+            {
+                ConnectedUsers.Remove(user);
+            }
+            await SendUserList();
+            await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task LeavePresentation(string presentationId)
+        private async Task SendUserList()
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, presentationId);
+            await Clients.All.SendAsync("UpdateUserList", ConnectedUsers.ToList());
         }
 
     }

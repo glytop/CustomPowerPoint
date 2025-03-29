@@ -121,6 +121,7 @@ public class HomeController : Controller
             Title = presentation.Title,
             CreatorNickname = _userRepository.GetNicknameById(presentation.CreatorId) ?? "Unknown",
             Slides = presentation.Slides,
+            ActiveSlide = presentation.Slides.FirstOrDefault(),
             Users = presentation.Users
         };
 
