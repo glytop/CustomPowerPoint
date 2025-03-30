@@ -33,12 +33,16 @@
                 <i class="bi bi-layers me-2"></i>
                 <span>Slides (<span id="slides-count">@Model.Slides.Count</span>)</span>
             </div>
-            <form method="post" asp-action="AddSlide" asp-controller="Home" class="mb-0">
-                <input type="hidden" name="presentationId" value="@Model.Id" />
-                <button type="submit" class="btn btn-sm btn-primary" id="add-slide-button">
-                    <i class="bi bi-plus-lg">A</i>
-                </button>
-            </form>
+            @if (Model.IsCreator)
+            {
+                <form method="post" asp-action="AddSlide" asp-controller="Home" class="mb-0">
+                    <input type="hidden" name="presentationId" value="@Model.Id" />
+                    <input type="hidden" name="nickname" value="@ViewBag.UserNickname" />
+                    <button type="submit" class="btn btn-sm btn-primary" id="add-slide-button">
+                        <i class="bi bi-plus-lg">A</i>
+                    </button>
+                </form>
+            }
         </div>
         <div class="p-2 overflow-auto" style="max-height: calc(100vh - 200px);" id="slides-list">
             @foreach (var slide in Model.Slides)
@@ -49,18 +53,22 @@
                         <input type="hidden" name="slideId" value="@slide.Id" />
                         <input type="hidden" name="nickname" value="@ViewBag.UserNickname" />
                         <button type="submit" class="btn p-0 w-100">
-                            <div class="mb-2 slide-thumbnail border @(slide.Id == Model.ActiveSlide?.Id ? "border-primary" : "border-secondary")">
+                            <div class="mb-2 slide-thumbnail border border-secondary">
                                 <div class="ratio ratio-16x9 bg-white d-flex align-items-center justify-content-center">
                                     <div class="text-muted small">Slide @slide.Order</div>
                                 </div>
                             </div>
                         </button>
                     </form>
-                    <form method="post" asp-action="DeleteSlide" asp-controller="Home">
-                        <input type="hidden" name="slideId" value="@slide.Id" />
-                        <input type="hidden" name="presentationId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-danger btn-sm">X</button>
-                    </form>
+                    @if (Model.IsCreator)
+                    {
+                        <form method="post" asp-action="DeleteSlide" asp-controller="Home">
+                            <input type="hidden" name="slideId" value="@slide.Id" />
+                            <input type="hidden" name="presentationId" value="@Model.Id" />
+                            <input type="hidden" name="nickname" value="@ViewBag.UserNickname" />
+                            <button type="submit" class="btn btn-danger btn-sm">X</button>
+                        </form>
+                    }
                 </div>
             }
         </div>
@@ -90,11 +98,32 @@
         <div class="overflow-auto" style="max-height: calc(100vh - 200px);" id="users-list">
             @foreach (var user in Model.Users)
             {
-                <div class="p-3 border-bottom d-flex align-items-center">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                        @user.Nickname.Substring(0, 1).ToUpper()
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                            @user.Nickname.Substring(0, 1).ToUpper()
+                        </div>
+                        <div class="fw-medium">@user.Nickname</div>
                     </div>
-                    <div class="fw-medium">@user.Nickname</div>
+
+                    @if (Model.CreatorId != user.Id)
+                    {
+                        <div>
+                            <form method="post" asp-action="SetUserRole" asp-controller="Home" class="d-inline">
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <input type="hidden" name="presentationId" value="@Model.Id" />
+                                <input type="hidden" name="role" value="Visitor" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Посетитель</button>
+                            </form>
+
+                            <form method="post" asp-action="SetUserRole" asp-controller="Home" class="d-inline">
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <input type="hidden" name="presentationId" value="@Model.Id" />
+                                <input type="hidden" name="role" value="Editor" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Редактор</button>
+                            </form>
+                        </div>
+                    }
                 </div>
             }
         </div>

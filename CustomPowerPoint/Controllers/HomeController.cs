@@ -58,14 +58,19 @@ public class HomeController : Controller
     {
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(nickname))
         {
-            ModelState.AddModelError("", "Заголовок и никнейм обязательны.");
-            return RedirectToAction("Presentations", new { nickname });
+            return RedirectToAction("Presentations", new
+            {
+                nickname
+            });
         }
 
         var user = _userRepository.GetByNickname(nickname);
-        if (user == null)
+        if (user is null)
         {
-            user = new UserData { Nickname = nickname };
+            user = new UserData
+            {
+                Nickname = nickname
+            };
             _userRepository.AddUser(user);
         }
 
@@ -92,7 +97,7 @@ public class HomeController : Controller
     public IActionResult PresentationMode(Guid presentationId)
     {
         var presentation = _presentationRepository.GetPresentationById(presentationId);
-        if (presentation == null)
+        if (presentation is null)
         {
             return NotFound();
         }
@@ -110,7 +115,13 @@ public class HomeController : Controller
     public IActionResult Editor(Guid presentationId, string nickname)
     {
         var presentation = _presentationRepository.GetPresentationById(presentationId);
-        if (presentation == null)
+        if (presentation is null)
+        {
+            return NotFound();
+        }
+
+        var user = _userRepository.GetByNickname(nickname);
+        if (user is null)
         {
             return NotFound();
         }
@@ -120,9 +131,11 @@ public class HomeController : Controller
             Id = presentation.Id,
             Title = presentation.Title,
             CreatorNickname = _userRepository.GetNicknameById(presentation.CreatorId) ?? "Unknown",
+            CreatorId = user.Id,
             Slides = presentation.Slides,
             ActiveSlide = presentation.Slides.FirstOrDefault(),
-            Users = presentation.Users
+            Users = presentation.Users,
+            IsCreator = presentation.CreatorId == user.Id.ToString()
         };
 
         ViewBag.UserNickname = nickname;
@@ -131,46 +144,58 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public IActionResult AddSlide(Guid presentationId)
+    public IActionResult AddSlide(Guid presentationId, string nickname)
     {
         var presentation = _presentationRepository.GetPresentationById(presentationId);
-        if (presentation == null)
+        if (presentation is null)
         {
             return NotFound();
         }
-        int newOrder = presentation.Slides.Count + 1;
+
+        int newOrder = presentation.Slides.Any() ? presentation.Slides.Max(s => s.Order) + 1 : 1;
         var newSlide = new SlideData
         {
             Order = newOrder
         };
+
         presentation.Slides.Add(newSlide);
         _presentationRepository.Update(presentation);
 
         return RedirectToAction("Editor", new
         {
-            presentationId
+            presentationId,
+            nickname
         });
     }
 
     [HttpPost]
-    public IActionResult DeleteSlide(Guid slideId, Guid presentationId)
+    public IActionResult DeleteSlide(Guid slideId, Guid presentationId, string nickname)
     {
         var presentation = _presentationRepository.GetPresentationById(presentationId);
-        if (presentation == null)
+        if (presentation is null)
         {
             return NotFound();
         }
 
-        var slide = presentation.Slides.FirstOrDefault(s => s.Id == slideId);
-        if (slide != null)
+        var slideToDelete = presentation.Slides.FirstOrDefault(s => s.Id == slideId);
+        if (slideToDelete == null)
         {
-            presentation.Slides.Remove(slide);
-            _presentationRepository.Update(presentation);
+            return NotFound();
         }
+
+        presentation.Slides.Remove(slideToDelete);
+
+        foreach (var slide in presentation.Slides.Where(s => s.Order > slideToDelete.Order))
+        {
+            slide.Order--;
+        }
+
+        _presentationRepository.Update(presentation);
 
         return RedirectToAction("Editor", new
         {
-            presentationId
+            presentationId,
+            nickname
         });
     }
 
@@ -179,5 +204,15 @@ public class HomeController : Controller
     {
         _presentationRepository.UpdateSlideContent(slideId, content);
         return Ok();
+    }
+
+    [HttpPost]
+    public IActionResult SetUserRole(Guid userId, Guid presentationId, string role)
+    {
+        _presentationRepository.SetUserRoleInPresentation(presentationId, userId, role);
+        return RedirectToAction("Editor", new
+        {
+            presentationId
+        });
     }
 }

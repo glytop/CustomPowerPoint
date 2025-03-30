@@ -17,10 +17,17 @@ namespace CustomPowerPoint.Data.Repositories
 
         public PresentationData? GetPresentationById(Guid id)
         {
-            return _dbSet
+            var presentation = _dbSet
                 .Include(p => p.Slides)
                 .Include(p => p.Users)
                 .FirstOrDefault(p => p.Id == id);
+
+            if (presentation != null)
+            {
+                presentation.Slides = presentation.Slides.OrderBy(s => s.Order).ToList();
+            }
+
+            return presentation;
         }
 
         public Guid AddPresentation(PresentationData presentation)
@@ -65,6 +72,20 @@ namespace CustomPowerPoint.Data.Repositories
             {
                 slide.Elements.First().Content = content;
                 _webDbContext.SaveChanges();
+            }
+        }
+
+        public void SetUserRoleInPresentation(Guid presentationId, Guid userId, string role)
+        {
+            var presentation = Get(presentationId);
+            if (presentation != null)
+            {
+                var user = presentation.Users.FirstOrDefault(u => u.Id == userId);
+                if (user != null)
+                {
+                    user.Role = role;
+                    _webDbContext.SaveChanges();
+                }
             }
         }
     }

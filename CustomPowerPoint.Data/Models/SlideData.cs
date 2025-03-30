@@ -1,6 +1,4 @@
-﻿using CustomPowerPoint.Enums;
-
-namespace CustomPowerPoint.Data.Models
+﻿namespace CustomPowerPoint.Data.Models
 {
     public class SlideData : BaseData
     {
